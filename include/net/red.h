@@ -139,6 +139,7 @@ struct red_parms {
 	u8		Wlog;		/* log(W)		*/
 	u8		Plog;		/* random number bits	*/
 	u8		Stab[RED_STAB_SIZE];
+	u8 		status;
 };
 
 struct red_vars {
@@ -171,6 +172,8 @@ static inline void red_set_parms(struct red_parms *p,
 				 u32 qth_min, u32 qth_max, u8 Wlog, u8 Plog,
 				 u8 Scell_log, u8 *stab, u32 max_P)
 {
+
+	p->status= 1;
 	int delta = qth_max - qth_min;
 	u32 max_p_delta;
 
@@ -356,6 +359,7 @@ static inline int red_action(const struct red_parms *p,
 			     struct red_vars *v,
 			     unsigned long qavg)
 {
+	
 	switch (red_cmp_thresh(p, qavg)) {
 		case RED_BELOW_MIN_THRESH:
 			v->qcount = -1;
@@ -363,7 +367,20 @@ static inline int red_action(const struct red_parms *p,
 
 		case RED_BETWEEN_TRESH:
 			if (++v->qcount) {
-				if (red_mark_probability(p, v, qavg)) {
+				if(p->status==1)
+{
+				if (red_nonlinear_algo(p, v, qavg)) {
+					v->qcount = 0;
+					v->qR = red_random(p);
+					return RED_PROB_MARK;
+				}
+			} else
+				v->qR = red_random(p);
+}
+
+else
+{
+if (red_mark_probability(p, v, qavg)) {
 					v->qcount = 0;
 					v->qR = red_random(p);
 					return RED_PROB_MARK;
@@ -371,6 +388,8 @@ static inline int red_action(const struct red_parms *p,
 			} else
 				v->qR = red_random(p);
 
+			
+}
 			return RED_DONT_MARK;
 
 		case RED_ABOVE_MAX_TRESH:
@@ -402,5 +421,26 @@ static inline void red_adaptative_algo(struct red_parms *p, struct red_vars *v)
 	max_p_delta = DIV_ROUND_CLOSEST(p->max_P, p->qth_delta);
 	max_p_delta = max(max_p_delta, 1U);
 	p->max_P_reciprocal = reciprocal_value(max_p_delta);
+}
+
+static inline void red_nonlinear_algo(const struct red_parms *p,
+				       const struct red_vars *v,
+				       unsigned long qavg)
+{
+    unsigned long qavg;
+    unsigned long t1,t2;
+    unsigned long prob;
+    qavg = v->qavg;
+    if (red_is_idling(v))
+        qavg = red_calc_qavg_from_idle_time(p, v);
+    p->max_P=(p->max_P)*1.5;
+    t1=(qavg - p->qth_min);
+    t2=(p->qth_max - p->qth_min);
+    t1*=t1 *p->max_p;
+    t2*=t2;
+    prob=t1/t2;
+
+return !(prob * v->qcount < (v->qR * p->max_P_reciprocal));
+
 }
 #endif
