@@ -374,19 +374,18 @@ static inline int red_action(const struct red_parms *p,
 					v->qR = red_random(p);
 					return RED_PROB_MARK;
 				}
-			} else
-				v->qR = red_random(p);
-}
+			} 
 
-else
+
+else if(p->status==0)
 {
 if (red_mark_probability(p, v, qavg)) {
 					v->qcount = 0;
 					v->qR = red_random(p);
 					return RED_PROB_MARK;
 				}
-			} else
-				v->qR = red_random(p);
+			}} else{
+				v->qR = red_random(p);} 
 
 			
 }
@@ -427,20 +426,15 @@ static inline void red_nonlinear_algo(const struct red_parms *p,
 				       const struct red_vars *v,
 				       unsigned long qavg)
 {
-    unsigned long qavg;
+    
     unsigned long t1,t2;
     unsigned long prob;
     qavg = v->qavg;
     if (red_is_idling(v))
         qavg = red_calc_qavg_from_idle_time(p, v);
-    p->max_P=(p->max_P)*1.5;
-    t1=(qavg - p->qth_min);
-    t2=(p->qth_max - p->qth_min);
-    t1*=t1 *p->max_p;
-    t2*=t2;
-    prob=t1/t2;
+    	prob = ((qavg -> qth_min) >> p->Wlog) * (qavg -> qth_min) >> p->Wlog)) * 1.5 / (p->qth_max - p->qth_min) >> p->Wlog;
 
-return !(prob * v->qcount < (v->qR * p->max_P_reciprocal));
+return !(prob * v->qcount < (v->qR));
 
 }
 #endif
