@@ -432,9 +432,9 @@ static inline void red_nonlinear_algo(const struct red_parms *p,
     qavg = v->qavg;
     if (red_is_idling(v))
         qavg = red_calc_qavg_from_idle_time(p, v);
-    	prob = ((qavg -> qth_min) >> p->Wlog) * (qavg -> qth_min) >> p->Wlog)) * 1.5 / (p->qth_max - p->qth_min) >> p->Wlog;
+    prob = (((qavg - qth_min) >> p->Wlog) * ((qavg - qth_min) >> p->Wlog) * 1.5) / ((p->qth_max - p->qth_min) >> p->Wlog);
 
-return !(prob * v->qcount < (v->qR));
+return !((prob * v->qcount) < (v->qR));
 
 }
 #endif
