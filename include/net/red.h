@@ -367,28 +367,24 @@ static inline int red_action(const struct red_parms *p,
 
 		case RED_BETWEEN_TRESH:
 			if (++v->qcount) {
-				if(p->status==1)
-{
-				if (red_nonlinear_algo(p, v, qavg)) {
+				if(p->status==0){				
+					if (red_mark_probability(p, v, qavg)) {
+						v->qcount = 0;
+						v->qR = red_random(p);
+						return RED_PROB_MARK;
+					}
+				}
+				else if(p->status==1){
+					if (red_nonlinear_algo(p, v, qavg)) {
 					v->qcount = 0;
 					v->qR = red_random(p);
 					return RED_PROB_MARK;
+					}
 				}
-			} 
+				
+			} else
+				v->qR = red_random(p);
 
-
-else if(p->status==0)
-{
-if (red_mark_probability(p, v, qavg)) {
-					v->qcount = 0;
-					v->qR = red_random(p);
-					return RED_PROB_MARK;
-				}
-			}} else{
-				v->qR = red_random(p);} 
-
-			
-}
 			return RED_DONT_MARK;
 
 		case RED_ABOVE_MAX_TRESH:
