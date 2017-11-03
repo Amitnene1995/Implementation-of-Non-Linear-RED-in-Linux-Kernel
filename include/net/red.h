@@ -333,13 +333,29 @@ static inline int red_mark_probability(const struct red_parms *p,
 	return !(((qavg - p->qth_min) >> p->Wlog) * v->qcount < v->qR);
 }
 
+static inline int red_nonlinear_algo(const struct red_parms *p,
+				       const struct red_vars *v,
+				       unsigned long qavg)
+{
+    
+    qavg = v->qavg;
+    if (red_is_idling(v))
+        qavg = red_calc_qavg_from_idle_time(p, v);
+    
+
+return !(((((qavg - p->qth_min) >> p->Wlog) * ((qavg - p->qth_min) >> p->Wlog) * 3) / (((p->qth_max - p->qth_min) >> p->Wlog)*2) * v->qcount) < v->qR);
+}
+
+
+
+
 enum {
 	RED_BELOW_MIN_THRESH,
 	RED_BETWEEN_TRESH,
 	RED_ABOVE_MAX_TRESH,
 };
 
-static inline int red_cmp_thresh(const struct red_parms *p, unsigned long qavg)
+int red_cmp_thresh(const struct red_parms *p, unsigned long qavg)
 {
 	if (qavg < p->qth_min)
 		return RED_BELOW_MIN_THRESH;
@@ -418,19 +434,6 @@ static inline void red_adaptative_algo(struct red_parms *p, struct red_vars *v)
 	p->max_P_reciprocal = reciprocal_value(max_p_delta);
 }
 
-static inline void red_nonlinear_algo(const struct red_parms *p,
-				       const struct red_vars *v,
-				       unsigned long qavg)
-{
-    
-    unsigned long t1,t2;
-    unsigned long prob;
-    qavg = v->qavg;
-    if (red_is_idling(v))
-        qavg = red_calc_qavg_from_idle_time(p, v);
-    prob = (((qavg - qth_min) >> p->Wlog) * ((qavg - qth_min) >> p->Wlog) * 1.5) / ((p->qth_max - p->qth_min) >> p->Wlog);
 
-return !((prob * v->qcount) < (v->qR));
 
-}
 #endif
