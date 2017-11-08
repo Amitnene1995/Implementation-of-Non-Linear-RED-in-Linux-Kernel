@@ -339,11 +339,7 @@ static inline int red_nonlinear_algo(const struct red_parms *p,
 {
     
     qavg = v->qavg;
-    if (red_is_idling(v))
-        qavg = red_calc_qavg_from_idle_time(p, v);
-    
-
-return !(((((qavg - p->qth_min) >> p->Wlog) * ((qavg - p->qth_min) >> p->Wlog) * 3) / (((p->qth_max - p->qth_min) >> p->Wlog)*2) * v->qcount) < v->qR);
+    return !(((((qavg - p->qth_min) >> p->Wlog) * ((qavg - p->qth_min) >> p->Wlog) * 3) / (((p->qth_max - p->qth_min) >> p->Wlog)*2) * v->qcount) < v->qR);
 }
 
 
