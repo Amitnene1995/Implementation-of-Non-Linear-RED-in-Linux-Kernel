@@ -139,7 +139,7 @@ struct red_parms {
 	u8		Wlog;		/* log(W)		*/
 	u8		Plog;		/* random number bits	*/
 	u8		Stab[RED_STAB_SIZE];
-	u8 		status;
+	u8 		nonlinear;
 };
 
 struct red_vars {
@@ -173,7 +173,7 @@ static inline void red_set_parms(struct red_parms *p,
 				 u8 Scell_log, u8 *stab, u32 max_P)
 {
 
-	p->status= 1;
+	p->nonlinear= 1;
 	int delta = qth_max - qth_min;
 	u32 max_p_delta;
 
@@ -337,9 +337,7 @@ static inline int red_nonlinear_algo(const struct red_parms *p,
 				       const struct red_vars *v,
 				       unsigned long qavg)
 {
-    
-    qavg = v->qavg;
-    return !(((((qavg - p->qth_min) >> p->Wlog) * ((qavg - p->qth_min) >> p->Wlog) * 3) / (((p->qth_max - p->qth_min) >> p->Wlog)*2) * v->qcount) < v->qR);
+	return !(((((qavg - p->qth_min) >> p->Wlog) * ((qavg - p->qth_min) >> p->Wlog) * 3) / (((p->qth_max - p->qth_min) >> p->Wlog)*2) * v->qcount) < v->qR);
 }
 
 
@@ -351,7 +349,7 @@ enum {
 	RED_ABOVE_MAX_TRESH,
 };
 
-int red_cmp_thresh(const struct red_parms *p, unsigned long qavg)
+static inline int red_cmp_thresh(const struct red_parms *p, unsigned long qavg)
 {
 	if (qavg < p->qth_min)
 		return RED_BELOW_MIN_THRESH;
@@ -379,14 +377,14 @@ static inline int red_action(const struct red_parms *p,
 
 		case RED_BETWEEN_TRESH:
 			if (++v->qcount) {
-				if(p->status==0){				
+				if(p->nonlinear==0){				
 					if (red_mark_probability(p, v, qavg)) {
 						v->qcount = 0;
 						v->qR = red_random(p);
 						return RED_PROB_MARK;
 					}
 				}
-				else if(p->status==1){
+				else if(p->nonlinear==1){
 					if (red_nonlinear_algo(p, v, qavg)) {
 					v->qcount = 0;
 					v->qR = red_random(p);
